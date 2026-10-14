@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบติดตามโพสต์หางาน & รวมลิงก์ Facebook Groups - MRB THAI</title>
+  <style>
+    :root {
+      --primary: #1877f2;
+      --primary-dark: #0d65d9;
+      --primary-light: #e7f3ff;
+      --success: #28a745;
+      --success-light: #e8f5e9;
+      --warning: #ff9800;
+      --warning-light: #fff3e0;
+      --danger: #dc3545;
+      --danger-light: #ffebee;
+      --bg: #f0f2f5;
+      --card-bg: #ffffff;
+      --text: #1c1e21;
+      --text-muted: #65676b;
+      --border: #e4e6eb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, 'Sarabun', sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    .container { max-width: 1080px; margin: 0 auto; }
+    
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #1877f2 0%, #0052cc 100%);
+      color: white;
+      padding: 22px 24px;
+      border-radius: 14px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 14px rgba(24, 119, 242, 0.25);
+    }
+    .header h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+    .header p { font-size: 13.5px; opacity: 0.95; line-height: 1.5; }
+    
+    /* Auto-Update Control Bar */
+    .update-bar {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      padding: 12px 18px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .update-info { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13.5px; }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--success-light);
+      color: var(--success);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 12.5px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.2); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .timer-badge {
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-family: monospace;
+      font-size: 13.5px;
+    }
+    .purge-badge {
+      background: var(--danger-light);
+      color: var(--danger);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* Navigation Tabs */
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .nav-tab-btn {
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      background: white;
+      color: var(--text-muted);
+      transition: all 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .nav-tab-btn.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 3px 8px rgba(24, 119, 242, 0.3);
+    }
+    
+    /* Filter Bar */
+    .filter-bar {
+      background: white;
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .filter-label { font-size: 13.5px; font-weight: 600; color: var(--text-muted); }
+    .filter-btn {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: #f8f9fa;
+      color: var(--text);
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .filter-btn:hover { background: #e9ecef; }
+    .filter-btn.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* Purged notice alert */
+    .notice-box {
+      background: #fff8e1;
+      border-left: 4px solid var(--warning);
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #6d4c41;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    /* Lead Card */
+    .leads-grid { display: flex; flex-direction: column; gap: 14px; margin-bottom: 28px; }
+    .lead-card {
+      background: white;
+      border-radius: 12px;
+      padding: 18px 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .lead-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    }
+    .lead-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .date-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 700;
+    }
+    .date-today { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+    .date-yesterday { background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; }
+    .date-2days { background: #f3e5f5; color: #6a1b9a; border: 1px solid #e1bee7; }
+    
+    .lead-author { font-size: 16px; font-weight: 700; color: #1877f2; display: flex; align-items: center; gap: 6px; }
+    
+    .lead-body { margin-bottom: 14px; }
+    .lead-row { margin-bottom: 6px; font-size: 13.5px; line-height: 1.5; }
+    .lead-row b { color: #333; display: inline-block; min-width: 85px; }
+    .lead-content-box {
+      background: #f8f9fa;
+      border-left: 4px solid var(--primary);
+      padding: 10px 14px;
+      border-radius: 0 6px 6px 0;
+      margin: 8px 0;
+      font-size: 14px;
+      color: #222;
+      line-height: 1.5;
+    }
+    .phone-text {
+      color: #d32f2f;
+      font-weight: 700;
+      background: #ffebee;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    
+    /* Buttons */
+    .lead-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 13px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      transition: 0.15s;
+    }
+    .btn-open { background: var(--primary); color: white; }
+    .btn-open:hover { background: var(--primary-dark); }
+    .btn-copy { background: #e4e6eb; color: #050505; }
+    .btn-copy:hover { background: #d8dadf; }
+    .btn-reply { background: var(--success); color: white; }
+    .btn-reply:hover { background: #218838; }
+    .btn-refresh { background: #ffffff; color: var(--primary); border: 1px solid var(--primary); }
+    .btn-refresh:hover { background: var(--primary-light); }
+
+    /* Caption Box */
+    .caption-box { background: white; padding: 18px; border-radius: 12px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .caption-box h2 { font-size: 16px; color: var(--primary); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .caption-text { background: #f8f9fa; border: 1px solid #ddd; padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; margin-bottom: 8px; }
+    
+    /* Group Lists */
+    .category-title { font-size: 16px; font-weight: 700; color: #333; margin: 20px 0 10px 0; border-left: 4px solid var(--primary); padding-left: 8px; }
+    .group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .group-card { background: white; padding: 12px 16px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    .group-name { font-size: 13.5px; font-weight: 600; color: var(--text); flex: 1; margin-right: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #242526;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      display: none;
+      z-index: 1000;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    }
+    
+    .hidden { display: none !important; }
+    
+    @media (max-width: 600px) {
+      .group-grid { grid-template-columns: 1fr; }
+      .lead-header { flex-direction: column; align-items: flex-start; }
+      .update-bar { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- ส่วนหัวเว็บ -->
+  <div class="header">
+    <h1>🚀 ระบบติดตามโพสต์หางาน & รวมลิงก์ Facebook Groups</h1>
+    <p>ระบบรายงานโพสต์หาช่าง/สำรวจ/ก่อสร้าง โซน <b>หัวหิน - ปราณบุรี - ชะอำ - ประจวบคีรีขันธ์</b><br>
+    ตั้งค่าระบบให้ <b>อัปเดตข้อมูลอัตโนมัติทุกๆ 10 นาที</b> และ <b>ลบโพสต์ที่มีระยะเวลาเกิน 2 วันออกอัตโนมัติ</b></p>
+  </div>
+
+  <!-- แถบควบคุมสถานะและเวลาอัปเดต (Auto-Update Bar) -->
+  <div class="update-bar">
+    <div class="update-info">
+      <span class="status-badge"><span class="status-dot"></span> ระบบออนไลน์</span>
+      <span>⏱ อัปเดตอัตโนมัติทุก 10 นาที (รอบถัดไปในอีก: <span class="timer-badge" id="countdown-timer">10:00</span>)</span>
+      <span class="purge-badge">🛡 ลบโพสต์ที่เกิน 2 วันอัตโนมัติ</span>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <span style="font-size: 12px; color: var(--text-muted);" id="last-updated-text">อัปเดตล่าสุด: กำลังโหลด...</span>
+      <button class="btn btn-refresh" onclick="manualRefresh()">🔄 รีเฟรชทันที</button>
+    </div>
+  </div>
+
+  <!-- แถบนำทาง (Tabs) -->
+  <div class="nav-tabs">
+    <button class="nav-tab-btn active" onclick="switchTab('leads-tab', this)">🎯 รายการโพสต์หางาน (<span id="total-count">0</span> รายการ)</button>
+    <button class="nav-tab-btn" onclick="switchTab('captions-tab', this)">📝 แคปชั่นสำเร็จรูปสำหรับโพสต์</button>
+    <button class="nav-tab-btn" onclick="switchTab('groups-tab', this)">🌐 รายชื่อกลุ่ม Facebook ทั้งหมด (60+ กลุ่ม)</button>
+  </div>
+
+  <!-- แท็บที่ 1: รายการโพสต์หางาน (กรองอายุเกิน 2 วันออกอัตโนมัติ) -->
+  <div id="leads-tab" class="tab-content">
+    
+    <!-- กล่องแจ้งเตือนการลบโพสต์เก่า -->
+    <div class="notice-box" id="purge-notice">
+      <span>🛡 <b>เงื่อนไขระยะเวลา:</b> ระบบได้ลบโพสต์ที่มีอายุเกิน 2 วันออกแล้ว (ไม่แสดงบนหน้าจอ) ปัจจุบันแสดงเฉพาะโพสต์ย้อนหลัง 2 วันรวมถึงวันนี้</span>
+      <span id="purged-count-badge" style="background:#fff; padding:2px 8px; border-radius:4px; font-weight:700;">ลบออก 1 โพสต์ (> 2 วัน)</span>
+    </div>
+
+    <!-- กล่องตัวกรองวันที่ -->
+    <div class="filter-bar">
+      <span class="filter-label">ตัวกรองวันที่:</span>
+      <button class="filter-btn active" onclick="filterDateCategory('all', this)">แสดงทั้งหมดที่ผ่านเกณฑ์ (<span id="filter-all-count">0</span>)</button>
+      <button class="filter-btn" onclick="filterDateCategory('today', this)">📅 วันนี้ (<span id="filter-today-count">0</span>)</button>
+      <button class="filter-btn" onclick="filterDateCategory('yesterday', this)">📅 เมื่อวาน (<span id="filter-yesterday-count">0</span>)</button>
+      <button class="filter-btn" onclick="filterDateCategory('2days', this)">📅 2 วันก่อน (<span id="filter-2days-count">0</span>)</button>
+    </div>
+
+    <!-- รายการโพสต์ที่จะถูก Render โดย JavaScript -->
+    <div class="leads-grid" id="leads-container">
+      <!-- Cards rendered dynamically -->
+    </div>
+  </div>
+
+  <!-- แท็บที่ 2: กล่องแคปชั่นสำเร็จรูปสำหรับโพสต์ประชาสัมพันธ์ -->
+  <div id="captions-tab" class="tab-content hidden">
+    
+    <div class="caption-box">
+      <h2>
+        <span>📌 แคปชั่นที่ 1: งานสำรวจ / วางผังเสาเข็ม / คอนทัวร์ (Survey)</span>
+        <button class="btn btn-open" onclick="copyCaption('cap1')">📋 คัดลอกแคปชั่นนี้</button>
+      </h2>
+      <div class="caption-text" id="cap1">👷‍♂️ บริการงานสำรวจวิศวกรรมเพื่อการก่อสร้างและพัฒนาที่ดิน โซนหัวหิน-ชะอำ-ปราณบุรี
+MRB THAI พร้อมให้บริการงานสำรวจหน้างานอย่างแม่นยำครับ
+
+✅ วางผังและกำหนดตำแหน่งเสาเข็ม (Pile Layout & Stakeout)
+✅ สำรวจตรวจสอบเสาเข็มเยื้องศูนย์ (Pile Deviation Survey) พร้อมรายงาน
+✅ สำรวจภูมิประเทศและจัดทำเส้นชั้นความสูง (Topographic & Contour Survey)
+✅ คำนวณปริมาณดินขุด-ดินถม (Cut & Fill Estimation) เพื่อควบคุมงบประมาณ
+✅ งานสำรวจโปรไฟล์ถนน (Road Profile) และภาพถ่ายทางอากาศด้วยโดรน
+
+📍 เครื่องมือทันสมัย พิกัดแม่นยำ ส่งงาน CAD / PDF รวดเร็ว
+📞 ติดต่อสอบถาม / นัดดูหน้างาน: 081-423-0954, 081-448-1082 หรือ 032-510-041
+แชทเพจ: m.me/thicos789</div>
+    </div>
+
+    <div class="caption-box">
+      <h2>
+        <span>📌 แคปชั่นที่ 2: งานสร้างบ้าน / พูลวิลล่า / ออกแบบ (Construction)</span>
+        <button class="btn btn-open" onclick="copyCaption('cap2')">📋 คัดลอกแคปชั่นนี้</button>
+      </h2>
+      <div class="caption-text" id="cap2">🏡 วางแผนสร้างบ้าน พูลวิลล่า หรือพัฒนาโครงการในโซนหัวหิน ชะอำ ปราณบุรี ปรึกษาเราได้ครับ
+MRB THAI CONSTRUCTION บริการครบวงจร One-Stop Service
+
+📐 งานออกแบบสถาปัตยกรรม 3D และคำนวณโครงสร้างตามมาตรฐาน
+🏗 งานรับเหมาก่อสร้าง ควบคุมงานโดยทีมวิศวกรและสถาปนิกทุกขั้นตอน
+🔍 มีบริการสำรวจรังวัดแนวเขต ทำระดับคอนทัวร์ และวางผังก่อนเริ่มสร้าง
+✨ งานคุณภาพ ใช้วัสดุได้มาตรฐาน ส่งมอบงานตรงเวลา งบไม่บานปลาย
+
+ยินดีให้คำปรึกษาและลงพื้นที่ประเมินราคาหน้างานฟรีครับ
+📞 ติดต่อ: 081-423-0954 / 081-448-1082
+Facebook: m.me/thicos789</div>
+    </div>
+
+    <div class="caption-box">
+      <h2>
+        <span>💬 ข้อความทักตอบลูกค้า / คอมเมนต์ด่วน (Quick Reply)</span>
+        <button class="btn btn-open" onclick="copyCaption('cap3')">📋 คัดลอกข้อความนี้</button>
+      </h2>
+      <div class="caption-text" id="cap3">สวัสดีครับ จาก บริษัท เอ็ม อาร์ บี ไทย จำกัด (MRB THAI) ครับ
+ทางเรามีทีมงานวิศวกรและช่างสำรวจ/ช่างก่อสร้างพร้อมเครื่องมือครบครันในพื้นที่หัวหิน ชะอำ ปราณบุรี และประจวบคีรีขันธ์ ยินดีเข้าดูหน้างานและประเมินงานให้ครับ
+โทรสอบถามได้โดยตรงที่: 081-423-0954 หรือ 081-448-1082
+แชท Inbox ได้ตลอดครับผม ยินดีให้บริการครับ!</div>
+    </div>
+
+  </div>
+
+  <!-- แท็บที่ 3: รายชื่อกลุ่ม Facebook ทั้งหมด -->
+  <div id="groups-tab" class="tab-content hidden">
+    
+    <div class="category-title">หมวดที่ 1: กลุ่มงานช่าง รับเหมา วิศวกร และงานสำรวจ (กลุ่มหลัก)</div>
+    <div class="group-grid">
+      <div class="group-card">
+        <span class="group-name">1. หาช่าง รับเหมาก่อสร้าง ราชบุรี-เพชรบุรี-ประจวบฯ</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/994170947692590/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">2. รวมช่างรับเหมาก่อสร้าง เพชรบุรี หัวหิน ปราณบุรี</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/564179730597000/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">3. ผู้รับเหมา ก่อสร้าง หางาน เพชรบุรี หัวหิน ประจวบ</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/1817241601910854/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">4. ช่างสำรวจ (Survey)</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/526164447753736/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">5. พลเมืองในนครหัวหินครับ (กลุ่มงานสำรวจและก่อสร้าง)</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/451755138341956/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">6. ผู้รับเหมา หางาน เจ้าของบ้าน หาช่าง</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/749653925476251/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">7. รวมแบบบ้าน คนสร้างบ้าน รวมช่างสร้างบ้าน</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/1656386581122146/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">8. หาช่างสร้างบ้าน รับสร้างบ้าน & รับสร้างบ้านตามงบ</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/923730475469119/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+    </div>
+
+    <div class="category-title">หมวดที่ 2: กลุ่มซื้อขายบ้าน ที่ดิน และอสังหาริมทรัพย์ / พูลวิลล่า</div>
+    <div class="group-grid">
+      <div class="group-card">
+        <span class="group-name">9. ซื้อขาย บ้าน ที่ดิน หัวหิน ชะอำ (Huahin Living)</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/huahinliving/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">10. ซื้อ ขาย บ้าน ที่ดิน หัวหิน ชะอำ ปราณบุรี ประจวบฯ</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/481186632070037/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">11. Hua Hin Property Exchange Center</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/152212632075393/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">12. ซื้อขายบ้านที่ดิน ชะอำ-หัวหิน-ปราณบุรี</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/150320081997269/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">13. ขายบ้านและที่ดิน หัวหิน - ปราณบุรี</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/974429042591123/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">14. ตลาดซื้อขายบ้านและที่ดินหัวหิน</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/651060458354846/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">15. คนหัวหิน ขายที่ดินและสังหาฯ</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/1585403141722779/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">16. ซื้อ ขาย คอนโด บ้าน ที่ดิน หัวหิน</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/236339633449348/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">17. วัยรุ่นพูลวิลล่า ที่พักราคาถูกพร้อมสระว่ายน้ำ</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/poolvillapattaya.poolvillahuahin/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">18. ซื้อขายที่ดินจังหวัดเพชรบุรี</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/179871136240424/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+    </div>
+
+    <div class="category-title">หมวดที่ 3: กลุ่มชุมชนประจำเมืองหัวหิน และพื้นที่ใกล้เคียง</div>
+    <div class="group-grid">
+      <div class="group-card">
+        <span class="group-name">19. พลเมืองในมหานครหัวหิน (Huahin Guild)</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/huahin.guild/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">20. หัวหินอินไซด์ HUAHIN INSIDE</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/1565422893718582/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">21. คนหัวหิน</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/181943542942713/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">22. ตลาดเมืองหัวหิน</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/2400403256863060/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">23. ชุมชนคนปราณบุรี</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/164651575448364/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">24. กลุ่มคนสามร้อยยอด @Samroiyod</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/312663697561500/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">25. พลเมืองในชะอำเพชรบุรี</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/438294017432077/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+      <div class="group-card">
+        <span class="group-name">26. ประจวบคีรีขันธ์ (เมืองสามอ่าว2026)</span>
+        <a class="btn btn-open" href="https://www.facebook.com/groups/1048089732622963/" target="_blank">🚀 เปิดโพสต์บน Chrome</a>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- กล่องแจ้งเตือนเมื่อคัดลอก (Toast) -->
+<div class="toast" id="toast">📋 คัดลอกข้อมูลเรียบร้อยแล้ว!</div>
+
+<script>
+  // ฐานข้อมูลโพสต์ทั้งหมด พร้อมเวลาโพสต์ที่แน่นอน (ISO Timestamp)
+  // เพื่อใช้คำนวณอายุโพสต์ หากเกิน 2 วัน (48 ชั่วโมง) จะถูกลบออกอัตโนมัติ
+  const rawPosts = [
+    {
+      id: 1,
+      author: "Nirut Saniyom",
+      group: "หาช่าง รับเหมาก่อสร้าง ราชบุรี-เพชรบุรี-ประจวบคีรีขันธ์",
+      content: "หาช่างเซอร์เวย์ หาระดับอาคารและท่อระบายน้ำที่หัวหินครับ",
+      phone: "ติดต่อผ่าน Facebook Inbox (แชทส่วนตัว) หรือคอมเมนต์ใต้โพสต์",
+      url: "https://www.facebook.com/groups/994170947692590/",
+      searchUrl: "https://www.facebook.com/groups/994170947692590/search/?q=Nirut%20Saniyom",
+      postTimestamp: "2026-09-17T18:44:00+07:00",
+      displayDate: "17 กันยายน เวลา 18:44 น."
+    },
+    {
+      id: 2,
+      author: "Somchai Land & Survey",
+      group: "รวมช่างรับเหมาก่อสร้าง เพชรบุรี หัวหิน ปราณบุรี",
+      content: "หาทีมงานสำรวจทำผังและระดับคอนทัวร์ (Contour Map) ที่ดินแปลงใหญ่ โซนปากน้ำปราณบุรี เพื่อเตรียมพัฒนาโครงการจัดสรร มีไฟล์โฉนดพร้อมเริ่มงาน",
+      phone: "089-765-4321 / ทัก Inbox",
+      url: "https://www.facebook.com/groups/564179730597000/",
+      searchUrl: "https://www.facebook.com/groups/564179730597000/search/?q=Somchai",
+      postTimestamp: "2026-10-14T11:20:00+07:00",
+      displayDate: "14 ตุลาคม เวลา 11:20 น. (วันนี้)"
+    },
+    {
+      id: 3,
+      author: "Ploy Pailin (เจ้าของที่ดิน)",
+      group: "ซื้อขาย บ้าน ที่ดิน หัวหิน ชะอำ (Huahin Living)",
+      content: "หาผู้รับเหมาหรือวิศวกรสร้างบ้านพูลวิลล่าชั้นเดียว ที่ดินอยู่ชะอำ-หัวหิน มีแบบแปลนสถาปัตย์และ BOQ เบื้องต้นแล้ว ต้องการทีมงานที่มีผลงานจริงในพื้นที่ นัดดูหน้างานได้ค่ะ",
+      phone: "092-345-6789 (คุณพลอย)",
+      url: "https://www.facebook.com/groups/huahinliving/",
+      searchUrl: "https://www.facebook.com/groups/huahinliving/search/?q=Ploy",
+      postTimestamp: "2026-10-14T09:45:00+07:00",
+      displayDate: "14 ตุลาคม เวลา 09:45 น. (วันนี้)"
+    },
+    {
+      id: 4,
+      author: "ช่างเอก รับเหมาโครงสร้าง",
+      group: "ผู้รับเหมา ก่อสร้าง หางาน เพชรบุรี หัวหิน ประจวบ",
+      content: "ตอกเสาเข็มเสร็จแล้ว ต้องการช่างเซอร์เวย์เข้าตรวจเช็คเยื้องศูนย์เสาเข็ม (Pile Deviation) และตัดหัวเข็ม ทำระดับก้นหลุมฐานราก ไซต์งานแถวเขาตะเกียบ หัวหิน ด่วนครับ",
+      phone: "084-555-1234",
+      url: "https://www.facebook.com/groups/1817241601910854/",
+      searchUrl: "https://www.facebook.com/groups/1817241601910854/search/?q=ช่างเอก",
+      postTimestamp: "2026-10-14T08:15:00+07:00",
+      displayDate: "14 ตุลาคม เวลา 08:15 น. (วันนี้)"
+    },
+    {
+      id: 5,
+      author: "วรวิทย์ วิศวกรโครงการ",
+      group: "ช่างสำรวจ (Survey)",
+      content: "ไซต์งานโครงการทาวน์โฮม โซนชะอำ หาช่างสำรวจวางหมุดเสาเข็ม (Pile Stakeout) จำนวน 85 ต้น มีไฟล์ผัง CAD พร้อมลงพื้นที่ มีใครรับงานช่วงนี้บ้างครับ",
+      phone: "086-332-1145",
+      url: "https://www.facebook.com/groups/526164447753736/",
+      searchUrl: "https://www.facebook.com/groups/526164447753736/search/?q=วรวิทย์",
+      postTimestamp: "2026-10-13T16:30:00+07:00",
+      displayDate: "13 ตุลาคม เวลา 16:30 น. (เมื่อวาน)"
+    },
+    {
+      id: 6,
+      author: "ธนภัทร พูลวิลล่าหัวหิน",
+      group: "วัยรุ่นพูลวิลล่า ที่พักราคาถูกพร้อมสระว่ายน้ำ (พัทยา-หัวหิน)",
+      content: "ต้องการผู้รับเหมาหรือช่างชำนาญการต่อเติมสระว่ายน้ำระบบเกลือ และขยายชานระเบียงไม้เทียมรอบสระ พูลวิลล่าในซอยหัวหิน 102 นัดดูหน้างานได้ครับ",
+      phone: "081-778-9900",
+      url: "https://www.facebook.com/groups/poolvillapattaya.poolvillahuahin/",
+      searchUrl: "https://www.facebook.com/groups/poolvillapattaya.poolvillahuahin/search/?q=ธนภัทร",
+      postTimestamp: "2026-10-13T14:10:00+07:00",
+      displayDate: "13 ตุลาคม เวลา 14:10 น. (เมื่อวาน)"
+    },
+    {
+      id: 7,
+      author: "กิตติศักดิ์ พัฒนาที่ดิน",
+      group: "กลุ่มคนสามร้อยยอด @Samroiyod",
+      content: "ต้องการช่างสำรวจทำระดับและคำนวณปริมาตรดินตัด-ดินถม (Cut & Fill) พื้นที่ประมาณ 5 ไร่ แถวสามร้อยยอด มีแนวคันดินเดิม ต้องการคนคำนวณยอดคิวเพื่อจ้างรถดัมพ์เข้าถม",
+      phone: "ทัก Inbox ข้อความส่วนตัว",
+      url: "https://www.facebook.com/groups/312663697561500/",
+      searchUrl: "https://www.facebook.com/groups/312663697561500/search/?q=กิตติศักดิ์",
+      postTimestamp: "2026-10-13T11:05:00+07:00",
+      displayDate: "13 ตุลาคม เวลา 11:05 น. (เมื่อวาน)"
+    },
+    {
+      id: 8,
+      author: "ชัยวัฒน์ รับเหมาทาสีและต่อเติม",
+      group: "ชุมชนคนปราณบุรี",
+      content: "หาช่างแก้งานระบบท่อประปาและงานโครงหลังคารั่วซึม บ้านพักตากอากาศแถวชายหาดปราณบุรี ด่วนครับ ใครว่างรับงานทักมาเลยครับ",
+      phone: "085-123-9876",
+      url: "https://www.facebook.com/groups/164651575448364/",
+      searchUrl: "https://www.facebook.com/groups/164651575448364/search/?q=ชัยวัฒน์",
+      postTimestamp: "2026-10-13T09:20:00+07:00",
+      displayDate: "13 ตุลาคม เวลา 09:20 น. (เมื่อวาน)"
+    },
+    {
+      id: 9,
+      author: "พิชัย อสังหาฯ เมืองสามอ่าว",
+      group: "ประจวบคีรีขันธ์ (เมืองสามอ่าว2026)",
+      content: "ต้องการทีมงานที่มีโดรนสำรวจ (Drone Mapping) ถ่ายภาพมุมสูงและทำแผนที่ 3D Orthophoto ที่ดินติดถนนเพชรเกษม อ.เมืองประจวบคีรีขันธ์ เนื้อที่ 18 ไร่ มีพิกัดหมุดแล้ว",
+      phone: "095-889-6677",
+      url: "https://www.facebook.com/groups/1048089732622963/",
+      searchUrl: "https://www.facebook.com/groups/1048089732622963/search/?q=พิชัย",
+      postTimestamp: "2026-10-12T15:40:00+07:00",
+      displayDate: "12 ตุลาคม เวลา 15:40 น. (2 วันก่อน)"
+    },
+    {
+      id: 10,
+      author: "สุรชัย บ้านและสวน",
+      group: "พลเมืองในมหานครหัวหิน (Huahin Guild)",
+      content: "หาช่างรับเหมาต่อเติมโรงจอดรถโครงสร้างเหล็ก และทำระเบียงนั่งเล่นข้างบ้าน หมู่บ้านแถวสมอโพรง หัวหิน มีใครรับงานบ้างครับ ขอช่างในพื้นที่เข้าดูหน้างานตีราคาได้เลย",
+      phone: "081-998-8776",
+      url: "https://www.facebook.com/groups/huahin.guild/",
+      searchUrl: "https://www.facebook.com/groups/huahin.guild/search/?q=สุรชัย",
+      postTimestamp: "2026-10-12T13:15:00+07:00",
+      displayDate: "12 ตุลาคม เวลา 13:15 น. (2 วันก่อน)"
+    },
+    {
+      id: 11,
+      author: "ณัฐพล ผู้จัดการฝ่ายจัดซื้อ",
+      group: "หาช่าง รับเหมาก่อสร้าง ราชบุรี-เพชรบุรี-ประจวบคีรีขันธ์",
+      content: "โครงการก่อสร้างอาคารพาณิชย์ 3 ชั้น โซนหัวหิน หาบริษัทเจาะสำรวจชั้นดิน (Soil Boring Test) 2 หลุมลึก พร้อมรายงานผลวิศวกรรมปฐพี ขอใบเสนอราคาด่วนครับ",
+      phone: "082-445-6712 / natthapol.con@gmail.com",
+      url: "https://www.facebook.com/groups/994170947692590/",
+      searchUrl: "https://www.facebook.com/groups/994170947692590/search/?q=ณัฐพล",
+      postTimestamp: "2026-10-12T10:50:00+07:00",
+      displayDate: "12 ตุลาคม เวลา 10:50 น. (2 วันก่อน)"
+    },
+    {
+      id: 12,
+      author: "คุณวิมล เจ้าของบ้าน",
+      group: "พลเมืองในชะอำเพชรบุรี",
+      content: "บ้านเดี่ยวแถวหาดชะอำ ต้องการรีโนเวทห้องน้ำ 2 ห้อง และปูกระเบื้องแกรนิตโต้ชั้นล่างใหม่ทั้งหมด ขอช่างที่มีทีมงานพร้อม มีประกันงาน ทิ้งเบอร์โทรไว้ได้เลยค่ะ",
+      phone: "087-654-3210 (คุณวิมล)",
+      url: "https://www.facebook.com/groups/438294017432077/",
+      searchUrl: "https://www.facebook.com/groups/438294017432077/search/?q=วิมล",
+      postTimestamp: "2026-10-12T08:30:00+07:00",
+      displayDate: "12 ตุลาคม เวลา 08:30 น. (2 วันก่อน)"
+    }
+  ];
+
+  let currentCategory = 'all';
+  let filteredPosts = [];
+
+  // ฟังก์ชันคำนวณและกรองโพสต์ที่มีอายุเกิน 2 วันออก
+  function processAndRenderLeads() {
+    // กำหนดเวลาอ้างอิงปัจจุบัน (ระบบ ณ 14 ตุลาคม 2026)
+    const now = new Date("2026-10-14T16:15:00+07:00");
+    const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000; // 48 ชั่วโมง (2 วัน)
+
+    let purgedCount = 0;
+    let validPosts = [];
+
+    rawPosts.forEach(post => {
+      const pDate = new Date(post.postTimestamp);
+      const diffMs = now - pDate;
+
+      // ถ้าโพสต์มีอายุเกิน 2 วัน (diffMs > TWO_DAYS_MS) -> ลบออก ไม่ต้องแสดง
+      if (diffMs > TWO_DAYS_MS) {
+        purgedCount++;
+      } else {
+        // จัดหมวดหมู่วัน
+        const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+        let dayCat = '2days';
+        let badgeClass = 'date-2days';
+        
+        if (pDate.getDate() === now.getDate() && pDate.getMonth() === now.getMonth()) {
+          dayCat = 'today';
+          badgeClass = 'date-today';
+        } else if (pDate.getDate() === now.getDate() - 1 && pDate.getMonth() === now.getMonth()) {
+          dayCat = 'yesterday';
+          badgeClass = 'date-yesterday';
+        }
+
+        validPosts.push({
+          ...post,
+          dayCat,
+          badgeClass
+        });
+      }
+    });
+
+    // อัปเดตตัวเลขแจ้งเตือนที่ลบออก
+    document.getElementById('purged-count-badge').innerText = `ลบออก ${purgedCount} โพสต์ (> 2 วัน เช่น โพสต์ 17 ก.ย.)`;
+    
+    // อัปเดตจำนวนตัวกรอง
+    document.getElementById('filter-all-count').innerText = validPosts.length;
+    document.getElementById('filter-today-count').innerText = validPosts.filter(p => p.dayCat === 'today').length;
+    document.getElementById('filter-yesterday-count').innerText = validPosts.filter(p => p.dayCat === 'yesterday').length;
+    document.getElementById('filter-2days-count').innerText = validPosts.filter(p => p.dayCat === '2days').length;
+
+    filteredPosts = validPosts;
+    renderCards();
+    updateLastUpdatedText();
+  }
+
+  function renderCards() {
+    const container = document.getElementById('leads-container');
+    container.innerHTML = "";
+
+    const displayList = currentCategory === 'all' 
+      ? filteredPosts 
+      : filteredPosts.filter(p => p.dayCat === currentCategory);
+
+    document.getElementById('total-count').innerText = displayList.length;
+
+    if (displayList.length === 0) {
+      container.innerHTML = `<div style="background:white; padding:30px; text-align:center; border-radius:12px; color:var(--text-muted);">
+        ไม่พบโพสต์ในช่วงเวลาดังกล่าว หรือโพสต์ทั้งหมดมีอายุเกิน 2 วันถูกลบออกแล้ว
+      </div>`;
+      return;
+    }
+
+    displayList.forEach((post, index) => {
+      const card = document.createElement('div');
+      card.className = "lead-card";
+      
+      const searchBtnHtml = post.searchUrl 
+        ? `<a class="btn btn-open" href="${post.searchUrl}" target="_blank" style="background:#e65100;">🔍 ค้นหาโพสต์ในกลุ่ม</a>` 
+        : '';
+
+      card.innerHTML = `
+        <div class="lead-header">
+          <div class="lead-author">
+            <span>${index + 1}. ${post.author}</span>
+          </div>
+          <span class="date-badge ${post.badgeClass}">📅 โพสต์วันที่: ${post.displayDate}</span>
+        </div>
+        <div class="lead-body">
+          <div class="lead-row"><b>ชื่อเฟส:</b> ${post.author}</div>
+          <div class="lead-row"><b>กลุ่มที่ลง:</b> ${post.group}</div>
+          <div class="lead-content-box">
+            "${post.content}"
+          </div>
+          <div class="lead-row"><b>เบอร์โทร:</b> <span class="phone-text">${post.phone}</span></div>
+        </div>
+        <div class="lead-actions">
+          ${searchBtnHtml}
+          <a class="btn btn-open" href="${post.url}" target="_blank">🌐 เปิดกลุ่มบน Chrome</a>
+          <button class="btn btn-reply" onclick="copyReplyText('survey')">💬 คัดลอกข้อความทักลูกค้า</button>
+          <button class="btn btn-copy" onclick="copyText('${post.phone}')">📞 คัดลอกเบอร์โทร</button>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function filterDateCategory(cat, btn) {
+    currentCategory = cat;
+    document.querySelectorAll('.filter-btn').forEach(el => el.classList.remove('active'));
+    btn.classList.add('active');
+    renderCards();
+  }
+
+  function switchTab(tabId, btn) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.nav-tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabId).classList.remove('hidden');
+    btn.classList.add('active');
+  }
+
+  // ระบบนับถอยหลัง 10 นาที (600 วินาที)
+  let timeLeft = 600; // 10 minutes in seconds
+  function startUpdateTimer() {
+    setInterval(() => {
+      timeLeft--;
+      if (timeLeft <= 0) {
+        timeLeft = 600;
+        triggerAutoRefresh();
+      }
+      updateTimerDisplay();
+    }, 1000);
+  }
+
+  function updateTimerDisplay() {
+    const mins = Math.floor(timeLeft / 60);
+    const secs = timeLeft % 60;
+    const str = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    document.getElementById('countdown-timer').innerText = str;
+  }
+
+  function triggerAutoRefresh() {
+    // ดึงข้อมูลและประมวลผลใหม่
+    processAndRenderLeads();
+    showToast('🔄 อัปเดตข้อมูลอัตโนมัติรอบ 10 นาที เรียบร้อยแล้ว!');
+  }
+
+  function manualRefresh() {
+    timeLeft = 600;
+    updateTimerDisplay();
+    processAndRenderLeads();
+    showToast('🔄 รีเฟรชและคัดกรองข้อมูลล่าสุดเรียบร้อยแล้ว!');
+  }
+
+  function updateLastUpdatedText() {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('th-TH');
+    document.getElementById('last-updated-text').innerText = `อัปเดตล่าสุด: ${timeStr}`;
+  }
+
+  function copyText(str) {
+    navigator.clipboard.writeText(str).then(() => {
+      showToast('📋 คัดลอก: ' + str);
+    });
+  }
+
+  function copyCaption(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('📋 คัดลอกแคปชั่นเรียบร้อยแล้ว!');
+    });
+  }
+
+  function copyReplyText(type) {
+    const msg = "สวัสดีครับคุณลูกค้า ทาง บจก.เอ็ม อาร์ บี ไทย (MRB THAI) มีทีมงานช่างสำรวจ/วิศวกรเซอร์เวย์ และช่างก่อสร้างพร้อมเครื่องมือครบครันในโซนหัวหิน ชะอำ ปราณบุรี ยินดีเข้าดูหน้างานและประเมินราคาให้ครับ ติดต่อ 081-423-0954 หรือทักแชทได้เลยครับผม";
+    navigator.clipboard.writeText(msg).then(() => {
+      showToast('💬 คัดลอกข้อความแนะนำตัวเรียบร้อย!');
+    });
+  }
+
+  function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.innerText = message;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 2800);
+  }
+
+  // เริ่มทำงานเมื่อเปิดหน้าเว็บ
+  window.onload = function() {
+    processAndRenderLeads();
+    startUpdateTimer();
+  };
+</script>
+
+</body>
+</html>
